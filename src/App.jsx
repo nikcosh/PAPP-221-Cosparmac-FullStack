@@ -1,43 +1,76 @@
 import React, { useState } from "react";
 import moviesData from "./data";
 import MovieList from "./components/MovieList";
-import MovieDetails from "./components/MovieDetails";
+import MovieModal from "./components/MovieModal";
 
 function App() {
   const [movies, setMovies] = useState(moviesData);
-  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [modalMovie, setModalMovie] = useState(null);
+  const [modalMode, setModalMode] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Create
   const addMovie = (movie) => {
     setMovies([...movies, { ...movie, id: Date.now() }]);
   };
 
-  // Update
-  const updateMovie = (updatedMovie) => {
-    setMovies(
-      movies.map((m) => (m.id === updatedMovie.id ? updatedMovie : m))
-    );
-    setSelectedMovie(null);
+  const updateMovie = (movie) => {
+    setMovies(movies.map((m) => (m.id === movie.id ? movie : m)));
   };
 
-  // Delete
   const deleteMovie = (id) => {
     setMovies(movies.filter((m) => m.id !== id));
-    setSelectedMovie(null);
+    setModalMovie(null);
+    setModalMode(null);
   };
+
+  const openModal = (movie = null, mode = "view") => {
+    setModalMovie(movie);
+    setModalMode(mode);
+  };
+
+  const closeModal = () => {
+    setModalMovie(null);
+    setModalMode(null);
+  };
+
+  const handleSave = (movie) => {
+    if (modalMode === "add") addMovie(movie);
+    else updateMovie(movie);
+    closeModal();
+  };
+
+  const filteredMovies = movies.filter((m) =>
+    m.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="app">
-      <h1>Movie Reviews App</h1>
-      {selectedMovie ? (
-        <MovieDetails
-          movie={selectedMovie}
-          onBack={() => setSelectedMovie(null)}
+      {/* Navbar */}
+      <nav className="navbar">
+        <h1 className="nav-title">Movie Reviews</h1>
+        <div className="nav-actions">
+          <input
+            type="text"
+            placeholder="Search movies..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <button onClick={() => openModal(null, "add")}>Add Movie</button>
+        </div>
+      </nav>
+
+      {/* Movie List */}
+      <MovieList movies={filteredMovies} onSelect={openModal} />
+
+      {/* Modal */}
+      {modalMode && (
+        <MovieModal
+          movie={modalMovie}
+          onClose={closeModal}
+          onSave={handleSave}
           onDelete={deleteMovie}
-          onUpdate={updateMovie}
+          mode={modalMode}
         />
-      ) : (
-        <MovieList movies={movies} onSelect={setSelectedMovie} onAdd={addMovie} />
       )}
     </div>
   );
